@@ -36,7 +36,7 @@ const sendRemainders = async () => {
     
     for (const quote of quotes) {
         const fechaLocal = quote.date.toLocaleDateString('es-CO', { timeZone: 'America/Bogota' });
-    const horaLocal = quote.date.toLocaleTimeString('es-CO', { timeZone: 'America/Bogota' });
+        const horaLocal = quote.date.toLocaleTimeString('es-CO', { timeZone: 'America/Bogota' });
 
     const mensaje = `<div style="font-family: 'Segoe UI', Arial, sans-serif; background-color: #f4f6f8; padding: 40px 0; display: flex; justify-content: center;">
   <div style="background: #ffffff; width: 100%; max-width: 600px; border-radius: 16px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); overflow: hidden;">
