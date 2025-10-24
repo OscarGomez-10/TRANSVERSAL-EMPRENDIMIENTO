@@ -1,32 +1,37 @@
 
 import nodemailer from 'nodemailer';
-import "dotenv/config";
+import 'dotenv/config';
+
+const secureSetting = process.env.EMAIL_SECURE !== undefined
+    ? process.env.EMAIL_SECURE === 'true'
+    : true;
+
+const transporter = nodemailer.createTransport({
+    host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+    port: Number(process.env.EMAIL_PORT || 465),
+    secure: secureSetting,
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    },
+    connectionTimeout: 10000
+});
 
 const SendEmail = (to, subject, body) => {
-    const transporder = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS
-        }
-    })
-
     const mailOptions = {
         from: process.env.EMAIL_USER,
-        to: to,
-        subject: subject,
+        to,
+        subject,
         html: body
-    }
+    };
 
-    transporder.sendMail(mailOptions, (error, info) => {
+    transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
-            console.log("ERROR AL ENVIAR EL CORREO", error);
+            console.log('ERROR AL ENVIAR EL CORREO', error);
         } else {
-            console.log(`CORREO ENVIADO` + info.response);
+            console.log(`CORREO ENVIADO ${info.response}`);
         }
-    })
+    });
+};
 
-}
-
-
-export {SendEmail} 
+export { SendEmail };
