@@ -117,9 +117,18 @@
                                             <i class="material-icons">medical_services</i>
                                             Tipo de servicio
                                         </label>
-                                        <q-select v-model="appointment.service_id" :options="serviceOptions" outlined
-                                            emit-value map-options :rules="[val => !!val || 'Selecciona un servicio']"
-                                            class="custom-select" placeholder="Elige un servicio">
+                                        <q-select
+                                            v-model="appointment.service_ids"
+                                            :options="serviceOptions"
+                                            outlined
+                                            emit-value
+                                            map-options
+                                            multiple
+                                            use-chips
+                                            :rules="[val => Array.isArray(val) && val.length > 0 || 'Selecciona al menos un servicio']"
+                                            class="custom-select"
+                                            placeholder="Elige uno o más servicios"
+                                        >
                                             <template v-slot:prepend>
                                                 <q-icon name="medical_services" color="primary" />
                                             </template>
@@ -156,14 +165,23 @@
                                     </div>
                                 </div>
 
-                                <div v-if="selectedService" class="service-summary">
+                                <div v-if="selectedServices.length" class="service-summary">
                                     <div class="summary-icon">
                                         <i class="material-icons">receipt</i>
                                     </div>
                                     <div class="summary-content">
                                         <div class="summary-title">Resumen de la cita</div>
-                                        <div class="summary-service">{{ selectedService.name }}</div>
-                                        <div class="summary-price">${{ formatPrice(selectedService.price) }}</div>
+                                        <div class="summary-services">
+                                            <div
+                                                v-for="service in selectedServices"
+                                                :key="`sel-${resolveServiceId(service)}`"
+                                                class="summary-service-row"
+                                            >
+                                                <span class="summary-service-name">{{ service.name }}</span>
+                                                <span class="summary-service-price">${{ formatPrice(service.price) }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="summary-price">Total: ${{ formatPrice(selectedServicesTotal) }}</div>
                                     </div>
                                 </div>
 
@@ -454,7 +472,7 @@ const appointments = ref([]);
 const clientId = ref('');
 const appointment = ref({
     pet_id: '',
-    service_id: '',
+    service_ids: [],
     appointmentDate: '',
     appointmentTime: ''
 });
@@ -511,9 +529,16 @@ const minDate = computed(() => {
 });
 
 // Servicio seleccionado
-const selectedService = computed(() => {
-    return services.value.find(s => resolveServiceId(s) === appointment.value.service_id);
+const selectedServices = computed(() => {
+    const ids = Array.isArray(appointment.value.service_ids) ? appointment.value.service_ids : [];
+    return ids
+        .map(id => services.value.find(service => resolveServiceId(service) === id))
+        .filter(Boolean);
 });
+
+const selectedServicesTotal = computed(() =>
+    selectedServices.value.reduce((acc, service) => acc + Number(service?.price || 0), 0)
+);
 
 // Funciones
 
@@ -611,7 +636,7 @@ const agendarCita = async () => {
         return;
     }
 
-    if (!appointment.value.pet_id || !appointment.value.service_id || !appointment.value.appointmentDate || !appointment.value.appointmentTime) {
+    if (!appointment.value.pet_id || !Array.isArray(appointment.value.service_ids) || appointment.value.service_ids.length === 0 || !appointment.value.appointmentDate || !appointment.value.appointmentTime) {
         showNotification('Completa todos los campos antes de agendar la cita.', 'warning');
         return;
     }
@@ -622,17 +647,35 @@ const agendarCita = async () => {
         // Combinar fecha y hora
         const dateTimeString = `${appointment.value.appointmentDate}T${appointment.value.appointmentTime}:00`;
         const appointmentDateTime = new Date(dateTimeString);
-        const normalizedDate = new Date(appointmentDateTime.getTime() - appointmentDateTime.getTimezoneOffset() * 60000);
+        if (Number.isNaN(appointmentDateTime.getTime())) {
+            showNotification('La fecha o la hora seleccionadas no son válidas.', 'warning');
+            loadingAppointment.value = false;
+            return;
+        }
+        const isoDate = appointmentDateTime.toISOString();
 
         // Preparar datos para enviar al backend
-        const service = services.value.find(s => resolveServiceId(s) === appointment.value.service_id);
+        const chosenServices = selectedServices.value;
+        if (!chosenServices.length) {
+            showNotification('Selecciona al menos un servicio válido.', 'warning');
+            loadingAppointment.value = false;
+            return;
+        }
+
+        const totalAmount = chosenServices.reduce((acc, svc) => acc + Number(svc?.price || 0), 0);
+        if (!Number.isFinite(totalAmount)) {
+            showNotification('No se pudo calcular el valor de los servicios seleccionados.', 'warning');
+            loadingAppointment.value = false;
+            return;
+        }
+
         const appointmentData = {
             client_id: clientId.value,
             pet_id: appointment.value.pet_id,
-            service_id: [appointment.value.service_id],
-            date: normalizedDate.toISOString(),
+            service_id: [...appointment.value.service_ids],
+            date: isoDate,
             status: 'pending',
-            total_amount: service?.price ?? 0
+            total_amount: totalAmount
         };
 
         await postData('Quote/register', appointmentData);
@@ -653,7 +696,7 @@ const agendarCita = async () => {
 const resetAppointmentForm = () => {
     appointment.value = {
         pet_id: '',
-        service_id: '',
+        service_ids: [],
         appointmentDate: '',
         appointmentTime: ''
     };
@@ -707,17 +750,30 @@ const getPetName = (petRef) => {
     return pet ? pet.name : 'Desconocida';
 };
 
-const getServiceName = (serviceRef) => {
-    if (Array.isArray(serviceRef)) {
-        return serviceRef.length ? getServiceName(serviceRef[0]) : 'Desconocido';
+const resolveServiceName = (serviceRef) => {
+    if (!serviceRef) {
+        return null;
     }
-
-    if (typeof serviceRef === 'object' && serviceRef !== null) {
-        return serviceRef.name || getServiceName(resolveServiceId(serviceRef));
+    if (typeof serviceRef === 'object') {
+        if (serviceRef.name) {
+            return serviceRef.name;
+        }
+        return resolveServiceName(resolveServiceId(serviceRef));
     }
 
     const service = services.value.find(s => resolveServiceId(s) === serviceRef);
-    return service ? service.name : 'Desconocido';
+    return service ? service.name : null;
+};
+
+const getServiceName = (serviceRef) => {
+    if (Array.isArray(serviceRef)) {
+        const names = serviceRef
+            .map(item => resolveServiceName(item))
+            .filter(Boolean);
+        return names.length ? names.join(', ') : 'Desconocido';
+    }
+
+    return resolveServiceName(serviceRef) || 'Desconocido';
 };
 
 const formatDateTime = (dateString) => {
@@ -781,10 +837,16 @@ const getPetColor = (type) => {
 };
 
 const logout = () => {
-    if (confirm('¿Deseas cerrar sesión?')) {
+    $q.dialog({
+        title: 'Cerrar sesión',
+        message: '¿Deseas cerrar sesión?',
+        cancel: { label: 'Cancelar', flat: true },
+        ok: { label: 'Aceptar', color: 'primary' },
+        persistent: true
+    }).onOk(() => {
         localStorage.removeItem(CLIENT_SESSION_KEY);
         router.push('/login-cliente');
-    }
+    });
 };
 
 // Cargar servicios disponibles
@@ -1222,6 +1284,29 @@ onMounted(async () => {
     font-size: 14px;
     opacity: 0.9;
     margin-bottom: 4px;
+}
+
+.summary-services {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.summary-service-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.summary-service-name {
+    font-weight: 600;
+}
+
+.summary-service-price {
+    font-weight: 600;
 }
 
 .summary-service {

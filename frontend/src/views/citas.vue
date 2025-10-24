@@ -13,6 +13,10 @@
                     </div>
                 </div>
                 <div class="header-right">
+                    <button class="btn-admin" @click="abrirModalAdmin">
+                        <i class="material-icons">admin_panel_settings</i>
+                        Nuevo Administrador
+                    </button>
                     <button class="btn-new" @click="abrirModal">
                         <i class="material-icons">add</i>
                         Nueva Cita
@@ -135,6 +139,107 @@
                 </div>
             </main>
         </div>
+
+        <!-- MODAL REGISTRO ADMINISTRADOR -->
+        <q-dialog v-model="modalAdminAbierto" persistent @hide="resetAdminForm">
+            <q-card class="admin-modal" style="width: 420px; max-width: 95vw;">
+                <div class="modal-header q-pa-md admin-header">
+                    <div class="row items-center no-wrap">
+                        <div class="col">
+                            <div class="text-h6 text-weight-bold text-white row items-center">
+                                <q-icon name="admin_panel_settings" size="26px" class="q-mr-sm" color="white" />
+                                Registrar Administrador
+                            </div>
+                            <div class="text-caption text-white q-mt-xs">
+                                Crea credenciales para un nuevo administrador
+                            </div>
+                        </div>
+                        <div>
+                            <q-btn dense round flat icon="close" color="white" class="modal-close-btn" @click="cerrarModalAdmin" />
+                        </div>
+                    </div>
+                </div>
+
+                <q-separator />
+
+                <q-card-section class="q-pa-lg">
+                    <q-form @submit.prevent="registrarAdministrador" class="q-gutter-md">
+                        <q-input
+                            v-model="formAdmin.username"
+                            label="Nombre de usuario"
+                            filled
+                            dense
+                            :disable="registrandoAdmin"
+                            :rules="[val => !!val || 'Ingresa un usuario']"
+                        >
+                            <template v-slot:prepend>
+                                <q-icon name="person" color="grey-6" />
+                            </template>
+                        </q-input>
+
+                        <q-input
+                            v-model="formAdmin.email"
+                            label="Correo electrónico"
+                            type="email"
+                            filled
+                            dense
+                            :disable="registrandoAdmin"
+                            :rules="[val => !!val || 'Ingresa el correo']"
+                        >
+                            <template v-slot:prepend>
+                                <q-icon name="email" color="grey-6" />
+                            </template>
+                        </q-input>
+
+                        <q-input
+                            v-model="formAdmin.password"
+                            :type="mostrarPassAdmin ? 'text' : 'password'"
+                            label="Contraseña"
+                            filled
+                            dense
+                            :disable="registrandoAdmin"
+                            :rules="[val => !!val || 'Ingresa la contraseña']"
+                        >
+                            <template v-slot:prepend>
+                                <q-icon name="lock" color="grey-6" />
+                            </template>
+                            <template v-slot:append>
+                                <q-icon
+                                    :name="mostrarPassAdmin ? 'visibility' : 'visibility_off'"
+                                    class="cursor-pointer"
+                                    @click="mostrarPassAdmin = !mostrarPassAdmin"
+                                />
+                            </template>
+                        </q-input>
+
+                        <q-input
+                            v-model="formAdmin.confirmPassword"
+                            :type="mostrarPassAdmin ? 'text' : 'password'"
+                            label="Confirmar contraseña"
+                            filled
+                            dense
+                            :disable="registrandoAdmin"
+                            :rules="[val => !!val || 'Confirma la contraseña']"
+                        >
+                            <template v-slot:prepend>
+                                <q-icon name="lock" color="grey-6" />
+                            </template>
+                        </q-input>
+
+                        <q-card-actions align="right" class="q-pt-md">
+                            <q-btn flat label="Cancelar" color="grey-6" @click="cerrarModalAdmin" :disable="registrandoAdmin" />
+                            <q-btn
+                                type="submit"
+                                label="Registrar"
+                                color="primary"
+                                unelevated
+                                :loading="registrandoAdmin"
+                            />
+                        </q-card-actions>
+                    </q-form>
+                </q-card-section>
+            </q-card>
+        </q-dialog>
 
         <!-- MODAL FORMULARIO CITA -->
         <q-dialog v-model="modalAbierto" persistent>
@@ -412,6 +517,32 @@
     gap: 16px;
 }
 
+.btn-admin {
+    padding: 12px 24px;
+    background: linear-gradient(135deg, #2AB7A9, #1a8f85);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(42, 183, 169, 0.35);
+}
+
+.btn-admin:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(42, 183, 169, 0.45);
+    background: linear-gradient(135deg, #35c9ba, #2AB7A9);
+}
+
+.btn-admin .material-icons {
+    font-size: 20px;
+}
+
 .btn-new {
     padding: 12px 24px;
     background: linear-gradient(135deg, #2AB7A9, #1a8f85);
@@ -436,6 +567,16 @@
 
 .btn-new .material-icons {
     font-size: 20px;
+}
+
+.admin-modal {
+    border-radius: 18px;
+    overflow: hidden;
+    box-shadow: 0 18px 40px rgba(42, 183, 169, 0.25);
+}
+
+.admin-header {
+    background: linear-gradient(135deg, #2AB7A9, #1a8f85);
 }
 
 /* ========== Main Content ========== */
@@ -773,9 +914,11 @@ q-separator {
 
     .header-right {
         width: 100%;
+        flex-direction: column;
         justify-content: stretch;
     }
 
+    .btn-admin,
     .btn-new {
         width: 100%;
         justify-content: center;
@@ -806,8 +949,17 @@ const $q = useQuasar()
 const filtroEstado = ref('Todas')
 const busqueda = ref('')
 const modalAbierto = ref(false)
+const modalAdminAbierto = ref(false)
 
 const step = ref(1)
+const formAdmin = ref({
+    username: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+})
+const registrandoAdmin = ref(false)
+const mostrarPassAdmin = ref(false)
 
 const opcionesFiltro = ['Todas', 'Abierta', 'Terminada', 'Anulada']
 
@@ -872,6 +1024,62 @@ const newPet = ref({
 
 // Computed total amount (sum of selected services prices)
 const totalAmount = ref(0)
+
+function resetAdminForm() {
+    formAdmin.value = {
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+    }
+    mostrarPassAdmin.value = false
+}
+
+function abrirModalAdmin() {
+    resetAdminForm()
+    modalAdminAbierto.value = true
+}
+
+function cerrarModalAdmin() {
+    modalAdminAbierto.value = false
+}
+
+async function registrarAdministrador() {
+    if (registrandoAdmin.value) {
+        return
+    }
+
+    const username = formAdmin.value.username.trim()
+    const email = formAdmin.value.email.trim().toUpperCase()
+    const password = formAdmin.value.password
+    const confirmPassword = formAdmin.value.confirmPassword
+
+    if (!username || !email || !password) {
+        $q.notify({ type: 'negative', message: 'Completa toda la información del administrador' })
+        return
+    }
+
+    if (password !== confirmPassword) {
+        $q.notify({ type: 'negative', message: 'Las contraseñas no coinciden' })
+        return
+    }
+
+    try {
+        registrandoAdmin.value = true
+        await postData('/User/register', {
+            username,
+            email,
+            password
+        })
+        $q.notify({ type: 'positive', message: 'Administrador registrado con éxito' })
+        cerrarModalAdmin()
+    } catch (err) {
+        const msg = err.response?.data?.msg || err.message || 'No se pudo registrar al administrador'
+        $q.notify({ type: 'negative', message: msg })
+    } finally {
+        registrandoAdmin.value = false
+    }
+}
 
 watch(selectedServiceIds, () => calculateTotal())
 

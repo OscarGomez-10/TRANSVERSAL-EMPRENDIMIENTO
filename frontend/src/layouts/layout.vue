@@ -42,17 +42,43 @@
                     </q-item-section>
                 </q-item>
 
-                <q-item clickable v-ripple to="/veterinaria" class="menu-item-large q-mb-sm">
+                <q-item clickable v-ripple to="/admin/citas" class="menu-item-large q-mb-sm">
                     <q-item-section avatar>
                         <div class="icon-wrapper">
                             <q-icon name="medical_services" size="28px" />
                         </div>
                     </q-item-section>
                     <q-item-section>
-                        <q-item-label class="text-weight-bold text-subtitle1">Veterinaria</q-item-label>
-                        <q-item-label caption class="text-caption">Servicios Médicos</q-item-label>
+                        <q-item-label class="text-weight-bold text-subtitle1">Citas</q-item-label>
+                        <q-item-label caption class="text-caption">Visualiza y gestiona las citas</q-item-label>
                     </q-item-section>
                 </q-item>
+
+
+                <q-item clickable v-ripple to="/admin/mascotas" class="menu-item-large q-mb-sm">
+                    <q-item-section avatar>
+                        <div class="icon-wrapper">
+                            <q-icon name="pets" size="28px" />
+                        </div>
+                    </q-item-section>
+                    <q-item-section>
+                        <q-item-label class="text-weight-bold text-subtitle1">Mascotas</q-item-label>
+                        <q-item-label caption class="text-caption">Gestiona las mascotas registradas</q-item-label>
+                    </q-item-section>
+                </q-item>
+
+                <q-item clickable v-ripple to="/admin/servicios" class="menu-item-large q-mb-sm">
+                    <q-item-section avatar>
+                        <div class="icon-wrapper">
+                            <q-icon name="miscellaneous_services" size="28px" />
+                        </div>
+                    </q-item-section>
+                    <q-item-section>
+                        <q-item-label class="text-weight-bold text-subtitle1">Servicios</q-item-label>
+                        <q-item-label caption class="text-caption">Gestiona los servicios</q-item-label>
+                    </q-item-section>
+                </q-item>
+
             </q-list>
 
             <!-- Footer del drawer -->

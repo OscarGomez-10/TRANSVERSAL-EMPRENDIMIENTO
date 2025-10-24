@@ -42,14 +42,6 @@
                         </div>
                     </div>
 
-                    <div class="form-options">
-                        <label class="remember-me">
-                            <input type="checkbox" v-model="rememberMe" />
-                            <span>Recordarme</span>
-                        </label>
-                        <a href="#" class="forgot-password">¿Olvidaste tu contraseña?</a>
-                    </div>
-
                     <button type="submit" class="btn-login" :disabled="loading">
                         <span v-if="!loading">Iniciar Sesión</span>
                         <span v-else class="loading">
@@ -88,7 +80,6 @@ const formData = ref({
 });
 
 const showPassword = ref(false);
-const rememberMe = ref(false);
 const loading = ref(false);
 const error = ref('');
 
@@ -263,42 +254,6 @@ const handleLogin = async () => {
 
 .toggle-password:hover {
     color: #2AB7A9 !important;
-}
-
-.form-options {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: -8px;
-}
-
-.remember-me {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    cursor: pointer;
-    font-size: 14px;
-    color: #666;
-}
-
-.remember-me input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: #2AB7A9;
-}
-
-.forgot-password {
-    color: #2AB7A9;
-    text-decoration: none;
-    font-size: 14px;
-    font-weight: 600;
-    transition: color 0.3s ease;
-}
-
-.forgot-password:hover {
-    color: #1a8f85;
-    text-decoration: underline;
 }
 
 .btn-login {
